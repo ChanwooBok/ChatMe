@@ -23,16 +23,24 @@ const handleListen = () => console.log(`Listening on ws://localhost:3000`);
 const server = http.createServer(app); // I have access to server. I can create Websocket on top of this server
 const wss = new WebSocketServer({ server }); // 이렇게 함으로써 http , websocket서버 둘 다 돌릴 수 있음.
 
+const sockets = [];
+
 // backSocket : 연결된 브라우저를 뜻한다. : 프론트엔드와 백엔드의 real time communication
 wss.on("connection", (backSocket) => {
   console.log("Connected to Browser !");
+  sockets.push(backSocket);
   backSocket.on("close", () => {
     console.log("Disconnected from the server !");
   });
+  // JSON.stringify() -> object 을 string으로 보내는 이유? :
+  // JSON.parse() -> string -> object
   backSocket.on("message", (message) => {
-    console.log("I've got a message from Browser : " + message.toString());
+    sockets.forEach((asocket) => asocket.send(message.toString("utf8")));
+    console.log(
+      "I've got a message from Browser : " + message.toString("utf8")
+    );
+    backSocket.send(message.toString("utf8"));
   });
-  backSocket.send("hi browser I am server");
 });
 
 server.listen(3000, handleListen);
