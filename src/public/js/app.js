@@ -1,48 +1,23 @@
-// frontend에 backend랑 연결해달라고 요청
-// socket : 서버로의 연결을 뜻한다. connection to server
-const FrontSocket = new WebSocket(`ws://${window.location.host}`);
+const socket = io(); // backend socket.io와 Front를 연결해주는 Function
+// 알아서 socket.io를 실행하고 있는 서버를 찾는다.
 
-const messageList = document.querySelector("ul");
-const nickForm = document.querySelector("#nick");
-const messageForm = document.querySelector("#message");
+const welcome = document.querySelector("#welcome");
+const form = welcome.querySelector("form");
 
-const makeMessage = (type, payload) => {
-  const jobject = { type, payload };
-  return JSON.stringify(jobject);
+const backendDone = (msg) => {
+  console.log(`The backend says : ${msg}`);
 };
-
-FrontSocket.addEventListener("open", () => {
-  console.log("connected from Front");
-});
-FrontSocket.addEventListener("message", (message) => {
-  console.log("New message : ", message.data);
-  const li = document.createElement("li");
-  li.innerText = message.data;
-  messageList.append(li);
-});
-
-FrontSocket.addEventListener("close", () => {
-  console.log("Disconnected from server X");
-});
-
-setTimeout(() => {
-  FrontSocket.send("hello Server!  I am the browser!");
-}, 5000);
 
 const handleSubmit = (e) => {
   e.preventDefault();
-  const input = messageForm.querySelector("input");
-  FrontSocket.send(makeMessage("new_message", input.value));
-  input.value = "";
+  const input = form.querySelector("input");
+  socket.emit("enter_room", input.value, () => {
+    console.log("server is done! this will pop up in frontend !");
+  }); // socket.emit으로 1. 내가 원하는 event를 첫번째 인자로 보낼 수 있음.
+  // 2. object를 그대로 보낼 수 있음 (string변환 할 필요 없음)
+  // 3. object뿐 아니라, string, int 등등 무제한으로 얼마든지 보낼 수 있음.
+  // 4. 맨 마지막 인자로 callback function 보낼 수 있음,반드시 맨 마지막 인자로 보내야 함. : 함수 호출은 backend에서 되나, 코드는 frontend에서 실행됨.
+  // + backend에서 인자도 보낼 수 있음.
 };
 
-const handleNickSubmit = (e) => {
-  e.preventDefault();
-  const input = nickForm.querySelector("input");
-  FrontSocket.send(makeMessage("new_nickname", input.value));
-  input.value = "";
-};
-
-messageForm.addEventListener("submit", handleSubmit);
-
-nickForm.addEventListener("submit", handleNickSubmit);
+form.addEventListener("submit", handleSubmit);
